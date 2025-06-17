@@ -21,23 +21,6 @@ Any data accompanying this project can be stored in the `data/` directory, while
 > git commit -m "Adding small counts matrix"
 > ```
 
-<!--
-Please add some more information about the project here. This can be copied directly from the project description. Also please update any references to NCBR-533 to the correct project identifer. For example: NCBR-123, NHLBI-123, NIAMS-123, etc. 
-
-The easiest way to do this is with sed or find/replace in your text editor. Please feel free to also delete or keep any in this file. This is just a template to get you started, and you can modify it as needed. At the end of the day, this is your project and you can structure it however you like!
-
-```bash
-# On biowulf/helix,
-# Example sed commnad on linux,
-# this can be run on Biowulf
-sed -i 's/NCBR-533/NCBR-123/g' README.md
-
-# On local laptop,
-# Example sed on macOSX,
-# this can be run on your local machine
-sed -i '' 's/NCBR-533/NCBR-123/g' README.md
-```
--->
 
 ## Installation
 
@@ -67,15 +50,44 @@ pip install -r requirements.txt
 ./packages.R
 ```
 
-<!--
+
 ## Reproduce the analyses
 
 This is where you can add any steps to reproduce the analyses. For example, you can add the following command to run the script:
 
 ```bash
-# Add any steps here to 
-# reproduce the analyses
-./scripts/deg.R -i data/counts.tsv -s data/sample_sheet.tsv -o results/
-./scripts/heatmap.py -i results/deg.tsv --fc 2 --fdr 0.05 -o results/figures/
+# Collapse and filter blastn results,
+# the blastn db contains 130012 genomic
+# and plasmid accession id representing
+# all the Staphylococcus aureus genomic
+# sequences on NCBI and all plasmid
+# sequences on PLSDB
+./scripts/parse_blastn_results.py \
+  -i data/staphylococcus_aureus_genes_blastn_results-with-header.tsv \
+  -s data/blastn_seqids.txt \
+  -l 0.95 -p 95.0 \
+  -o results/blastn_filtered
+# Get a high-level overview of the
+# collapsed/filtered results
+./scripts/get_overview.sh \
+  0.95 95.0 \
+  results/blastn_filtered_collapsed_results.tsv \
+  data/staphylococcus_aureus_query_genes_of_interest.fa \
+> results/overview.tsv
+# Parse out each gene's results
+# to create a seperate sheet in
+# the excel spreadsheet
+while read gene; do 
+  echo "# Parsing ${gene} from collapsed results"; 
+  awk -F '\t' -v GENE="${gene}" \
+    'NR==1 || $1==GENE {print}' results/blastn_filtered_collapsed_results.tsv \
+  > results/${gene}_blastn_results.tsv; 
+done < <(grep '^>' data/staphylococcus_aureus_query_genes_of_interest.fa | sed 's/^>//g' | awk '{print $1}')
+# Create an excel spreadsheet with
+# the overview, presences/absences
+# file, and each genes blastn results
+ln -fs ${PWD}/results/blastn_filtered_gene_presence_absence.tsv ${PWD}/results/gene_detection.tsv
+./scripts/files2spreadsheet.py \
+  -i results/overview.tsv results/gene_detection.tsv results/BlaZ_blastn_results.tsv results/MecA_blastn_results.tsv results/MecI_blastn_results.tsv \
+  -o results/NCBR-533_Staphylococcus_aureus-genomic_plasmid_gene_presence_0.95-length_95-pidentity.xlsx -a
 ```
--->
