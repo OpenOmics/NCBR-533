@@ -133,7 +133,7 @@ def parse_cli_arguments():
     parser.add_argument(
         '-p', '--percent-identity-filter',
         type=float, required=False,
-        default=100.0,
+        default=95.00,
         help=argparse.SUPPRESS
     )
     # Get version information
@@ -453,7 +453,7 @@ if __name__ == '__main__':
             )
             # Collapse results to a single result
             if results_list:
-                blastn_dict[k][gene] = results_list[0]
+                blastn_dict[k][gene] = results_list[0]  # dict
             else:
                 blastn_dict[k][gene] = []
     log("Finished collapsing blastn results to a single top hit per gene per accession_id")

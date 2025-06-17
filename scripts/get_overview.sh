@@ -6,7 +6,9 @@ LEN_THRESHOLD="${1:-"0.95"}"  # Default: 0.95
 PID_THRESHOLD="${2:-"95.00"}"  # Default: 95
 # File to parse
 BLAST_RESULTS="$3"
-
+# Gene to sequence
+# fasta file
+GENE_FASTA="$4"
 
 # Get size of blastdb
 # ntargets=$(grep '^>' ../blastdb/staphylococcus_aureus_combined.fa | wc -l)
@@ -45,4 +47,4 @@ while read gene length; do
     pct=$(echo -e "${n_plasmid_hits}\t${nt_plasmid}" | awk -F '\t' '{printf "%.2f\n", (($1/$2)*100.0)}')
     pct2=$(echo -e "${n_plasmid_hits}\t${n_acc_plasmid}" | awk -F '\t' '{printf "%.2f\n", (($1/$2)*100.0)}')
     echo -e "${gene}_plasmid_hits\t${n_plasmid_hits}\t${n_acc}\t${n_acc_genomic}\t${n_acc_plasmid}\t${pct2}"
-done < <(paste - - < staphylococcus_aureus_query_genes_of_interest.fa | awk -F '\t' -v OFS='\t' '{print $1,length($2)}' | awk -v OFS='\t' '{print $1,$NF}' | sed 's/^>//g')
+done < <(paste - - < "${GENE_FASTA}" | awk -F '\t' -v OFS='\t' '{print $1,length($2)}' | awk -v OFS='\t' '{print $1,$NF}' | sed 's/^>//g')
