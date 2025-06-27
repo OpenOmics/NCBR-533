@@ -20,11 +20,12 @@ ntargets=$(grep '^>' ../blastdb/staphylococcus_aureus_combined.fa | wc -l)
 ntargets=$((ntargets + 1))   # +1 to ensure we get all targets
 echo "[$(timestamp)] Started blastn gene search against Staph genome + plasmid database (contains ${ntargets} strains)..."
 
-blastn -query staphylococcus_aureus_query_genes_of_interest.fa \
+mkdir -p ../results
+blastn -query ../data/staphylococcus_aureus_query_genes_of_interest.fa \
     -db ../blastdb/staphylococcus_aureus_db \
     -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore" \
     -num_threads 12 \
-    -out staphylococcus_aureus_genes_blastn_results.tsv \
+    -out ../results/staphylococcus_aureus_genes_blastn_results.tsv \
     -max_target_seqs ${ntargets}
 
 echo "[$(timestamp)] Finished running blastn against Staph genome + plasmid database. Results saved to staphylococcus_aureus_genes_blastn_results.tsv"
