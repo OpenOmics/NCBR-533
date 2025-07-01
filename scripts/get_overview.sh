@@ -2,7 +2,7 @@
 set -eu
 
 # Thresholds
-LEN_THRESHOLD="${1:-"0.95"}"  # Default: 0.95
+LEN_THRESHOLD="${1:-"0.95"}"   # Default: 0.95
 PID_THRESHOLD="${2:-"95.00"}"  # Default: 95
 # File to parse
 BLAST_RESULTS="$3"

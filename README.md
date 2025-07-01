@@ -76,18 +76,19 @@ This is where you can add any steps to reproduce the analyses. For example, you 
 > results/overview.tsv
 # Parse out each gene's results
 # to create a seperate sheet in
-# the excel spreadsheet
+# the excel spreadsheet, only
+# parse out genomic alignments
 while read gene; do 
   echo "# Parsing ${gene} from collapsed results"; 
   awk -F '\t' -v GENE="${gene}" \
-    'NR==1 || $1==GENE {print}' results/blastn_filtered_collapsed_results.tsv \
+    'NR==1 || ($1==GENE && $2 ~ /_genomic$/) {print}' results/blastn_filtered_collapsed_results.tsv \
   > results/${gene}_blastn_results.tsv; 
 done < <(grep '^>' data/staphylococcus_aureus_query_genes_of_interest.fa | sed 's/^>//g' | awk '{print $1}')
 # Create an excel spreadsheet with
 # the overview, presences/absences
 # file, and each genes blastn results
-ln -fs ${PWD}/results/blastn_filtered_gene_presence_absence.tsv ${PWD}/results/gene_detection.tsv
+awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/blastn_filtered_gene_presence_absence.tsv > results/gene_detection.tsv
 ./scripts/files2spreadsheet.py \
-  -i results/overview.tsv results/gene_detection.tsv results/BlaZ_blastn_results.tsv results/MecA_blastn_results.tsv results/MecI_blastn_results.tsv \
-  -o results/NCBR-533_Staphylococcus_aureus-genomic_plasmid_gene_presence_0.95-length_95-pidentity.xlsx -a
+  -i results/overview.tsv results/gene_detection.tsv results/*_blastn_results.tsv \
+  -o results/NCBR-533_Staphylococcus_aureus-genomic_7gene_presence_0.95-length_95-pidentity.xlsx -a
 ```

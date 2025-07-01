@@ -32,7 +32,13 @@ _HELP = dedent("""
         Input BLASTN results file to parse.
     -s, --blastdb-seqs BLASTDB_SEQIDS
         File containing seqeunce IDs of all
-        sequences in the blastn databases. 
+        sequences in the blastn databases.
+        This can be parsed from the FASTA
+        file that was used to create the
+        blastn database via the following
+        command below:
+          $ grep '^>' file.fa \\
+              | sed 's/^>//g' > blastn_seqids.txt
     -o, --output-prefix OUTPUT_PREFIX
         Output prefix to writing the collapsed
         results. This script will produce more than
@@ -58,6 +64,7 @@ _HELP = dedent("""
 @Example:
     $ ./{0} \\
             --input blastn_results-with-header.tsv \\
+            --blastdb-seqs blastn_seqids.txt
             --output blastn_filtered
 """.format(_NAME)
 )
@@ -397,7 +404,11 @@ if __name__ == '__main__':
     GENE_LENGTHS = {
         "BlaZ": 846,
         "MecA": 2007,
-        "MecI": 372
+        "MecI": 372,
+        "Stk1": 1995,
+        "Stp1": 744,
+        "BlaR1": 1758,
+        "BlaI": 381
     }
 
     # Parse and collapse blastn results
@@ -499,9 +510,9 @@ if __name__ == '__main__':
 
     log("Started creating gene presence/absence output file: {0}_gene_presence_absence.tsv".format(args.output_prefix))    
     # Create gene presence/absence output file
-    # ACCESSION_ID  BlaZ    MecA    MecI    NGenes
-    # ID1           0       1       0       1
-    # ID2           1       0       1       2
+    # ACCESSION_ID  BlaZ    MecA    MecI   Stk1   Stp1   BlaR1   BlaI   NGenes
+    # ID1           0       1       0      1      1      0       1      4
+    # ID2           1       0       1      0      1      1       1      5
     with open(args.output_prefix + "_gene_presence_absence.tsv", 'w') as out_fh:
         # Write header
         header = ["ACCESSION_ID"] + list(GENE_LENGTHS.keys()) + ["NGenes"]
