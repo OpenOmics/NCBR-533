@@ -92,3 +92,17 @@ awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/blastn_filtered_gene_pr
   -i results/overview.tsv results/gene_detection.tsv results/*_blastn_results.tsv \
   -o results/NCBR-533_Staphylococcus_aureus-genomic_7gene_presence_0.95-length_95-pidentity.xlsx -a
 ```
+
+## Methods
+
+### Staphylococcus aureus gene detection analyses
+
+To systematically assess the presence of key antibiotic resistance and regulatory genes in *Staphylococcus aureus*, all publicly available *S. aureus* genomes deposited in the National Center for Biotechnology Information (NCBI) database<sup>1</sup> were downloaded along with the sequences of the following key genes of interest: **BlaZ**, **MecA**, **MecI**, **Stk1**, **Stp1**, **BlaR1**, and **BlaI**. The goal was to determine the presence or absence of these genes across the comprehensive dataset of *S. aureus* genomes. In total, 127894 unique accession identifiers corresponding to *S. aureus* genome assemblies were retrieved from NCBI. These genome assemblies were combined to build a custom BLAST nucleotide database using makeblastdb from the BLAST+ suite<sup>2</sup> (version 2.15.0+).
+
+The full-length nucleotide sequences of the seven target genes of interest were queried against the custom *S. aureus* BLAST database using blastn with the `-max_target_seqs` option to ensure the alignment results of each query-target pair was reported. To account for the possibility of multiple hits per accession (e.g., due to fragmented assemblies or gene copy number variation), the blastn results were first collapsed by accession identifier. For each gene-accession pair, only the single top-scoring hit was retained, prioritizing alignments with the greatest percent identity and alignment length. Hits were then filtered using stringent criteria to minimize false positives: only alignments with *(i)* an alignment length fraction ≥ 0.95 (i.e., ≥ 95% of the gene length aligned) and *(ii)* percent nucleotide identity ≥ 95% were considered indicative of gene presence. The alignment length fraction was calculated as the aligned region divided by the full length of the query gene. A binary gene presence matrix (containing 127894 accession identifiers by the 7 genes of interest) was created, where presence of a gene was encoded as `1` and the absence of a gene was encoded as a `0`.
+
+## References
+
+<sup>**1.** National Center for Biotechnology Information (NCBI)[Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – [cited 2025 June 01]. Available from: https://www.ncbi.nlm.nih.gov/</sup>    
+
+<sup>**2.** Camacho, C., Coulouris, G., Avagyan, V. et al. BLAST+: architecture and applications. BMC Bioinformatics 10, 421 (2009). https://doi.org/10.1186/1471-2105-10-421</sup>    
