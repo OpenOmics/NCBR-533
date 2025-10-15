@@ -61,7 +61,9 @@ This is where you can add any steps to reproduce the analyses. For example, you 
 # and plasmid accession id representing
 # all the Staphylococcus aureus genomic
 # sequences on NCBI and all plasmid
-# sequences on PLSDB
+# sequences on PLSDB. Filter thresholds:
+# - Alignment length fraction: 0.95
+# - Alignment percent identity: 95.0
 ./scripts/parse_blastn_results.py \
   -i data/staphylococcus_aureus_genes_blastn_results-with-header.tsv \
   -s data/blastn_seqids.txt \
@@ -91,6 +93,44 @@ awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/blastn_filtered_gene_pr
 ./scripts/files2spreadsheet.py \
   -i results/overview.tsv results/gene_detection.tsv results/*_blastn_results.tsv \
   -o results/NCBR-533_Staphylococcus_aureus-genomic_7gene_presence_0.95-length_95-pidentity.xlsx -a
+
+# Collapse and filter blastn results,
+# the blastn db contains 130012 genomic
+# and plasmid accession id representing
+# all the Staphylococcus aureus genomic
+# sequences on NCBI and all plasmid
+# sequences on PLSDB. Filter thresholds:
+# - Alignment length fraction: 0.95
+# - Alignment percent identity: 80.0
+./scripts/parse_blastn_results.py \
+  -i data/staphylococcus_aureus_genes_blastn_results-with-header.tsv \
+  -s data/blastn_seqids.txt \
+  -l 0.95 -p 80.0 \
+  -o results/relaxed/blastn_filtered
+# Get a high-level overview of the
+# collapsed/filtered results
+./scripts/get_overview.sh \
+  0.95 80.0 \
+  results/relaxed/blastn_filtered_collapsed_results.tsv \
+  data/staphylococcus_aureus_query_genes_of_interest.fa \
+> results/relaxed/overview.tsv
+# Parse out each gene's results
+# to create a seperate sheet in
+# the excel spreadsheet, only
+# parse out genomic alignments
+while read gene; do 
+  echo "# Parsing ${gene} from collapsed results"; 
+  awk -F '\t' -v GENE="${gene}" \
+    'NR==1 || ($1==GENE && $2 ~ /_genomic$/) {print}' results/relaxed/blastn_filtered_collapsed_results.tsv \
+  > results/relaxed/${gene}_blastn_results.tsv; 
+done < <(grep '^>' data/staphylococcus_aureus_query_genes_of_interest.fa | sed 's/^>//g' | awk '{print $1}')
+# Create an excel spreadsheet with
+# the overview, presences/absences
+# file, and each genes blastn results
+awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/relaxed/blastn_filtered_gene_presence_absence.tsv > results/relaxed/gene_detection.tsv
+./scripts/files2spreadsheet.py \
+  -i results/relaxed/overview.tsv results/relaxed/gene_detection.tsv results/relaxed/*_blastn_results.tsv \
+  -o results/NCBR-533_Staphylococcus_aureus-genomic_7gene_presence_0.95-length_80-pidentity.xlsx -a
 ```
 
 ## Methods
