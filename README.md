@@ -131,6 +131,62 @@ awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/relaxed/blastn_filtered
 ./scripts/files2spreadsheet.py \
   -i results/relaxed/overview.tsv results/relaxed/gene_detection.tsv results/relaxed/*_blastn_results.tsv \
   -o results/NCBR-533_Staphylococcus_aureus-genomic_7gene_presence_0.95-length_80-pidentity.xlsx -a
+
+# Create a strain-specific FASTA file
+# alignment sequence for each gene.
+# Filter thresholds:
+# - Alignment length fraction: 0.95
+# - Alignment percent identity: 95.0
+mkdir -p results/fasta_sequences/stringent
+# Group1: MSSA (mecA negative strains)
+awk -F '\t' -v OFS='\t' 'NR>1 && $3=="0" {print}' results/gene_detection.tsv \
+  | cut -f1 \
+> results/MSSA_seqids.txt
+# Group 2: MRSA-mecI-positive (mecA and mecI positive strains)
+awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="1") {print}' results/gene_detection.tsv \
+  | cut -f1 \
+> results/MRSA-mecI-positive_seqids.txt
+# Group 3: MRSA (mecA positive but mecI negative strains)
+awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="0") {print}' results/gene_detection.tsv \
+  | cut -f1 \
+> results/MRSA-mecI-negative_seqids.txt
+# Extract gene alignment sequence of
+# each strain of interest
+echo '#!/usr/bin/env bash' > ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
+for strain in "MSSA" "MRSA-mecI-positive" "MRSA-mecI-negative"; do
+  echo "# ${strain} strains" >> ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
+  for gene in "BlaI" "BlaR1" "BlaZ" "MecA" "MecI" "Stk1" "Stp1"; do
+    echo "${PWD}/scripts/extract_blastn_alignment_sequence.py --input-blast-result ${PWD}/results/${gene}_blastn_results.tsv --input-strain-ids ${PWD}/results/${strain}_seqids.txt --input-strain-fasta ${PWD}/data/staphylococcus_aureus_genomic.fa --output-strain-fasta ${PWD}/results/fasta_sequences/stringent/${strain}/${strain}_${gene}_aligned_sequence.fa" >> ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
+  done
+done && chmod +x ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
+swarm --logdir "${PWD}/results/fasta_sequences/stringent/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
+
+# Filter thresholds:
+# - Alignment length fraction: 0.95
+# - Alignment percent identity: 80.0
+mkdir -p results/fasta_sequences/relaxed
+# Group1: MSSA (mecA negative strains)
+awk -F '\t' -v OFS='\t' 'NR>1 && $3=="0" {print}' results/relaxed/gene_detection.tsv \
+  | cut -f1 \
+> results/relaxed/MSSA_seqids.txt
+# Group 2: MRSA-mecI-positive (mecA and mecI positive strains)
+awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="1") {print}' results/relaxed/gene_detection.tsv \
+  | cut -f1 \
+> results/relaxed/MRSA-mecI-positive_seqids.txt
+# Group 3: MRSA (mecA positive but mecI negative strains)
+awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="0") {print}' results/relaxed/gene_detection.tsv \
+  | cut -f1 \
+> results/relaxed/MRSA-mecI-negative_seqids.txt
+# Extract gene alignment sequence of
+# each strain of interest
+echo '#!/usr/bin/env bash' > ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
+for strain in "MSSA" "MRSA-mecI-positive" "MRSA-mecI-negative"; do
+  echo "# ${strain} strains" >> ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
+  for gene in "BlaI" "BlaR1" "BlaZ" "MecA" "MecI" "Stk1" "Stp1"; do
+    echo "${PWD}/scripts/extract_blastn_alignment_sequence.py --input-blast-result ${PWD}/results/relaxed/${gene}_blastn_results.tsv --input-strain-ids ${PWD}/results/relaxed/${strain}_seqids.txt --input-strain-fasta ${PWD}/data/staphylococcus_aureus_genomic.fa --output-strain-fasta ${PWD}/results/fasta_sequences/relaxed/${strain}/${strain}_${gene}_aligned_sequence.fa" >> ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
+  done
+done && chmod +x ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
+swarm --logdir "${PWD}/results/fasta_sequences/stringent/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
 ```
 
 ## Methods
