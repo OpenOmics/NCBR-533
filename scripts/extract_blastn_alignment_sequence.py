@@ -69,8 +69,8 @@ _VERISON = '1.0.0'
 
 # Classes and helper functions
 class InvalidBasePairError(Exception):
-    """Raised when a nucleotide cannot be mapped to a known complement basepair.
-    This may occur when the provided sequence contains unknown/invalid basepairs.
+    """Raised when a nucleotide cannot be mapped to a known complement base pair.
+    This may occur when the provided sequence contains unknown/invalid base pairs.
     In this scenario, the corresponding complementary basepair cannot be determined.
 
     @attributes:
@@ -248,13 +248,15 @@ def fasta(filename):
     The generator yields each sequence identifier and its 
     corresponding sequence to ensure a low memory profile. 
     If a sequence occurs over multiple lines, the yielded 
-    sequence is concatenated.
+    sequence is concatenated. This function can read both
+    plain text and gzip-compressed FASTA files.
     @param filename <str>:
         Path of FASTA file to read and parse
     @yield chrom, sequence <str>, <str>:
         Yields each seq id and seq in the FASTA file
     """
-    with open(filename, 'r') as file:
+    open_func = gzip.open if filename.endswith('.gz') else open
+    with open_func(filename, 'rt') as file:
         sequence, chrom = '', ''
         for line in file:
             line = line.strip()
@@ -283,13 +285,11 @@ def fold(sequence, max_length=80):
     """
     # Clean sequence prior to conversion
     sequence = sequence.strip()
-
     # Format sequence to max length 
     chunks = []
     for i in range(0, len(sequence)-1, max_length):
         chunk = sequence[i:i+max_length]
         chunks.append(chunk)
-    
     return "\n".join(chunks)
 
 
