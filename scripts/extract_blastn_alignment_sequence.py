@@ -316,6 +316,36 @@ def reverse_complement(sequence):
     return revcomp
 
 
+def index_header(file_header, filename, require=[]):
+    """Returns the index of each column_name
+    as a dictionary.
+    @param file_header <str>:
+        First line of a file, containing column names
+    @param filename <str>:
+        Name of the file the header was parsed from,
+        used for error reporting.
+    @param require <list[str]>:
+        List of column names that must be present
+        in the header, otherwise a fatal error
+        will be raised.
+    @return idx <dict[str]=int>:
+        Column name to index dictionary
+    """
+    idx = {}
+    tokens = [
+        stripped(c.strip()) \
+            for c in file_header.strip().split('\t')
+    ]
+    # Create column name to index mapping
+    for i,c in enumerate(tokens):
+        idx[c]=i
+    # Check that required columns exist
+    missing = [r for r in require if r not in idx ]
+    if missing: 
+        fatal("Fatal error: Missing required columns in input file '{0}': {1}".format(filename, ",".join(missing)))
+    return idx
+
+
 def main():
     """
     Main method, entry point that runs when program is directly invoked.
@@ -344,6 +374,9 @@ def main():
     # Read in and parse the per-gene filtered
     # BLASTN results file
     blastn_seqids_to_alignment_region = {}
+    # Backup default column indices if
+    # the BLASTN output file does not
+    # contain header with column names
     BLAST_SEQID_IDX = 1          # Column index for subject sequence ID in BLASTN output
     BLAST_SUBJECT_START_IDX = 8  # Column index for subject start in BLASTN output
     BLAST_SUBJECT_END_IDX = 9    # Column index for subject end in BLASTN output
@@ -353,7 +386,12 @@ def main():
     log("Started parsing input BLASTN results file: ", args.input_blast_result)
     blastn_lines_parsed = 0
     with open(args.input_blast_result, 'r') as fh:
-        header = next(fh)  # Skip header line
+        # Try to parse header for column indices,
+        # use default indices if header not present
+        col2idx = index_header(next(fh), filename = args.input_blast_result)
+        BLAST_SEQID_IDX = col2idx.get('sseqid', BLAST_SEQID_IDX)
+        BLAST_SUBJECT_START_IDX = col2idx.get('sstart', BLAST_SUBJECT_START_IDX)
+        BLAST_SUBJECT_END_IDX = col2idx.get('send', BLAST_SUBJECT_END_IDX)
         for line in fh:
             line = stripped(line)
             if line and not line.startswith('#'):
@@ -388,7 +426,10 @@ def main():
                     alignment_sequence = sequence[subject_start-1:subject_end]
                 else:
                     # Reverse strand alignment,
-                    # need to find the reverse
+                    # Flip the start and end,
+                    # subtract 1 from start for
+                    # 0-based indexing of string,
+                    # and find the reverse
                     # complement of the sequence
                     alignment_sequence = sequence[subject_end-1:subject_start]
                     # Get reverse complement
@@ -401,7 +442,7 @@ def main():
                     )
                 )
     log("Finished parsing input Staphylococcus aureus FASTA file, parsed {0} sequences.".format(parsed_alignments_from_fasta))
-
+    log("Finished writing strain-specific gene alignment sequences to output FASTA file: ", args.output_strain_fasta)
 
 if __name__ == '__main__':
     # Call main
