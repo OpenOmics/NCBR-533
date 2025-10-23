@@ -316,11 +316,22 @@ def reverse_complement(sequence):
     @return rev_comp_sequence <str>:
         Reverse complement of the input DNA sequence
     """
-    # Mappings for complementing bases
+    # Mappings for complementary bases
+    # under the IUPAC system:
+    # https://en.wikipedia.org/wiki/Nucleic_acid_notation
     COMPLEMENT = {
+        # Canonical base pairs
         'A':'T', 'T':'A', 'C':'G', 'G':'C', 
-        'a':'t', 't':'a', 'c':'g', 'g':'c', 
-        'N':'N', 'n':'n', '-':'-'
+        'a':'t', 't':'a', 'c':'g', 'g':'c',
+        'U':'A', 'u':'a', 'N':'N', 'n':'n',
+        # Ambiguous base pairs
+        'W':'S', 'S':'W', 'M':'K', 'K':'M',
+        'w':'s', 's':'w', 'm':'k', 'k':'m',
+        'R':'Y', 'Y':'R', 'B':'V', 'V':'B',
+        'r':'y', 'y':'r', 'b':'v', 'v':'b',
+        'D':'H', 'd':'h', 'H':'D', 'h':'d',
+        # Gaps
+        '-':'-'
     }
     # Find the reverse complement DNA sequence
     revcomp = ""
