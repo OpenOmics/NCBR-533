@@ -159,7 +159,7 @@ for strain in "MSSA" "MRSA-mecI-positive" "MRSA-mecI-negative"; do
     echo "${PWD}/scripts/extract_blastn_alignment_sequence.py --split-strain-fasta-ids --input-blast-result ${PWD}/results/${gene}_blastn_results.tsv --input-strain-ids ${PWD}/results/${strain}_seqids.txt --input-strain-fasta ${PWD}/data/staphylococcus_aureus_genomic.fa --output-strain-fasta ${PWD}/results/fasta_sequences/stringent/${strain}/${strain}_${gene}_aligned_sequence.fa" >> ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
   done
 done && chmod +x ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
-swarm --time 2-00:00:00 --logdir "${PWD}/results/fasta_sequences/stringent/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
+swarm --time 6:00:00 --logdir "${PWD}/results/fasta_sequences/stringent/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
 
 # Filter thresholds:
 # - Alignment length fraction: 0.95
@@ -186,7 +186,7 @@ for strain in "MSSA" "MRSA-mecI-positive" "MRSA-mecI-negative"; do
     echo "${PWD}/scripts/extract_blastn_alignment_sequence.py --split-strain-fasta-ids --input-blast-result ${PWD}/results/relaxed/${gene}_blastn_results.tsv --input-strain-ids ${PWD}/results/relaxed/${strain}_seqids.txt --input-strain-fasta ${PWD}/data/staphylococcus_aureus_genomic.fa --output-strain-fasta ${PWD}/results/fasta_sequences/relaxed/${strain}/${strain}_${gene}_aligned_sequence.fa" >> ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
   done
 done && chmod +x ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
-swarm --time 2-00:00:00 --logdir "${PWD}/results/fasta_sequences/relaxed/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
+swarm --time 6:00:00 --logdir "${PWD}/results/fasta_sequences/relaxed/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
 ```
 
 ## Methods
