@@ -14,6 +14,7 @@ _NAME = os.path.basename(sys.argv[0])
 _HELP = dedent("""
 @Usage:
     $ ./{0} [-h] [--version] \\
+            [--split-strain-fasta-ids]
             --input-blast-result PER_GENE_BLASTN_RESULTS \\
             --input-strain-fasta BLASTN_FASTA_DB \\
             --input-strain-ids STRAIN_SEQUENCE_IDS \\
@@ -51,11 +52,17 @@ _HELP = dedent("""
         Output FASTA file to write the gene aligment
         sequences for the strain of interest.
 @Options:
+    -d, --split-strain-fasta-ids
+                   Split the sequence IDs in the input
+                   strain FASTA file on the '|' character.
+                   This is useful if the sequence IDs in
+                   the FASTA file contain additional info.
     -h, --help     Shows this help message and exits.
     -v, --version  Prints the version and exits.
 
 @Example:
     $ ./{0} \\
+          --split-strain-fasta-ids \\
           --input-blast-result MecA_blastn_results.tsv \\
           --input-strain-ids MSSA_seqids.txt \\
           --input-strain-fasta staphylococcus_aureus_combined.fa \\
@@ -226,6 +233,15 @@ def parse_cli_arguments():
         type=str, required=True,
         help=argparse.SUPPRESS
     )
+    # Option to split the sequence IDs in the input
+    # strain FASTA file on the '|' character.
+    parser.add_argument(
+        '-d', '--split-strain-fasta-ids',
+        action='store_true',
+        required = False,
+        default = False,
+        help=argparse.SUPPRESS
+    )
     # Get version information
     parser.add_argument(
         '-v', '--version',
@@ -346,6 +362,20 @@ def index_header(file_header, filename, require=[]):
     return idx
 
 
+def split_fasta_id(fasta_id, char='|', field_idx=0):
+    """Splits a FASTA sequence ID on the character and field index.
+    @param fasta_id <str>:
+        FASTA sequence ID to split
+    @param char <str>:
+        Character to split the FASTA ID on, default '|'
+    @param field_idx <int>:
+        Field index to return after splitting, default 0
+    @return <str>:
+        Parsed field of the split FASTA sequence ID.
+    """
+    return fasta_id.split(char)[field_idx]
+
+
 def main():
     """
     Main method, entry point that runs when program is directly invoked.
@@ -416,6 +446,15 @@ def main():
     with open(args.output_strain_fasta, 'w') as out_fh:
         for seqid, sequence in fasta(args.input_strain_fasta):
             seqid = stripped(seqid)
+            # Split sequence identifer on pipe char,
+            # this contains the same accession ID
+            # in the blast results
+            seqid = seqid if not args.split_strain_fasta_ids \
+            else split_fasta_id(
+                seqid,
+                char = '|',
+                field_idx = 0
+            )
             if seqid in blastn_seqids_to_alignment_region:
                 parsed_alignments_from_fasta += 1
                 subject_start, subject_end = blastn_seqids_to_alignment_region[seqid]
