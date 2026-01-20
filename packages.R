@@ -10,7 +10,8 @@
 #   install.packages('packageName', repos='http://cran.r-project.org')
 cran_packages <- c(
     "BiocManager",
-    "ggplot2"
+    "ggplot2",
+    "ggpubr"
 )
 
 # Install missing CRAN packages 
@@ -29,7 +30,6 @@ install.packages(
 # Install via: 
 #   BiocManager::install('packageName')
 bioc_packages <- c(
-    "limma"
 )
 
 # Install missing Bioconductor packages 
