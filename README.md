@@ -2,13 +2,13 @@
    
   <h1>NCBR-533 🔬</h1>
   
-  **_Data and script for processing NCBR-533_**
+  **_Data and script for processing Staphylococcus aureus data-mining project_**
 
 </div>
 
 # Overview
 
-This repository contains data and scripts for analyzing NCBR-533. 
+This repository contains data and scripts for identifying antibiotic resistance genes in all publicly available Staphylococcus aureus genomic and plasmid sequences. 
 
 Any data accompanying this project can be stored in the `data/` directory, while any scripts used to process the data can be stored in the `scripts/` directory.
 
@@ -24,7 +24,7 @@ Any data accompanying this project can be stored in the `data/` directory, while
 
 ## Installation
 
-To install the repository locally, you can use the following command:
+To install the repository locally, please run the following commands:
 
 ```bash
 # Clone the github repository
@@ -35,13 +35,13 @@ cd NCBR-533/
 
 ## Setup your environment
 
-To setup your environment and download any missing packages, you can use the following command:
+To setup your environment and download any missing packages, please run the following commands:
 
 ```bash
-# Install any missing or 
+# Install any missing or
 # required python packages
 # in a virtual environment
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
 pip install -r requirements.txt
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ## Reproduce the analyses
 
-This is where you can add any steps to reproduce the analyses. For example, you can add the following command to run the script:
+To reproduce any downstream analyses, please run the following commands below.
 
 ```bash
 # Collapse and filter blastn results,
@@ -80,11 +80,11 @@ This is where you can add any steps to reproduce the analyses. For example, you 
 # to create a seperate sheet in
 # the excel spreadsheet, only
 # parse out genomic alignments
-while read gene; do 
-  echo "# Parsing ${gene} from collapsed results"; 
+while read gene; do
+  echo "# Parsing ${gene} from collapsed results";
   awk -F '\t' -v GENE="${gene}" \
     'NR==1 || ($1==GENE && $2 ~ /_genomic$/) {print}' results/blastn_filtered_collapsed_results.tsv \
-  > results/${gene}_blastn_results.tsv; 
+  > results/${gene}_blastn_results.tsv;
 done < <(grep '^>' data/staphylococcus_aureus_query_genes_of_interest.fa | sed 's/^>//g' | awk '{print $1}')
 # Create an excel spreadsheet with
 # the overview, presences/absences
@@ -118,11 +118,11 @@ awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/blastn_filtered_gene_pr
 # to create a seperate sheet in
 # the excel spreadsheet, only
 # parse out genomic alignments
-while read gene; do 
-  echo "# Parsing ${gene} from collapsed results"; 
+while read gene; do
+  echo "# Parsing ${gene} from collapsed results";
   awk -F '\t' -v GENE="${gene}" \
     'NR==1 || ($1==GENE && $2 ~ /_genomic$/) {print}' results/relaxed/blastn_filtered_collapsed_results.tsv \
-  > results/relaxed/${gene}_blastn_results.tsv; 
+  > results/relaxed/${gene}_blastn_results.tsv;
 done < <(grep '^>' data/staphylococcus_aureus_query_genes_of_interest.fa | sed 's/^>//g' | awk '{print $1}')
 # Create an excel spreadsheet with
 # the overview, presences/absences
@@ -131,62 +131,6 @@ awk -F '\t' 'NR==1 || $1 ~ /_genomic$/ {print}'  results/relaxed/blastn_filtered
 ./scripts/files2spreadsheet.py \
   -i results/relaxed/overview.tsv results/relaxed/gene_detection.tsv results/relaxed/*_blastn_results.tsv \
   -o results/NCBR-533_Staphylococcus_aureus-genomic_7gene_presence_0.95-length_80-pidentity.xlsx -a
-
-# Create a strain-specific FASTA file
-# alignment sequence for each gene.
-# Filter thresholds:
-# - Alignment length fraction: 0.95
-# - Alignment percent identity: 95.0
-mkdir -p results/fasta_sequences/stringent
-# Group1: MSSA (mecA negative strains)
-awk -F '\t' -v OFS='\t' 'NR>1 && $3=="0" {print}' results/gene_detection.tsv \
-  | cut -f1 \
-> results/MSSA_seqids.txt
-# Group 2: MRSA-mecI-positive (mecA and mecI positive strains)
-awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="1") {print}' results/gene_detection.tsv \
-  | cut -f1 \
-> results/MRSA-mecI-positive_seqids.txt
-# Group 3: MRSA (mecA positive but mecI negative strains)
-awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="0") {print}' results/gene_detection.tsv \
-  | cut -f1 \
-> results/MRSA-mecI-negative_seqids.txt
-# Extract gene alignment sequence of
-# each strain of interest
-echo '#!/usr/bin/env bash' > ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
-for strain in "MSSA" "MRSA-mecI-positive" "MRSA-mecI-negative"; do
-  echo "# ${strain} strains" >> ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
-  for gene in "BlaI" "BlaR1" "BlaZ" "MecA" "MecI" "Stk1" "Stp1"; do
-    echo "${PWD}/scripts/extract_blastn_alignment_sequence.py --split-strain-fasta-ids --input-blast-result ${PWD}/results/${gene}_blastn_results.tsv --input-strain-ids ${PWD}/results/${strain}_seqids.txt --input-strain-fasta ${PWD}/data/staphylococcus_aureus_genomic.fa --output-strain-fasta ${PWD}/results/fasta_sequences/stringent/${strain}/${strain}_${gene}_aligned_sequence.fa" >> ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
-  done
-done && chmod +x ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
-swarm --time 6:00:00 --logdir "${PWD}/results/fasta_sequences/stringent/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/stringent/extract_sequences.swarm
-
-# Filter thresholds:
-# - Alignment length fraction: 0.95
-# - Alignment percent identity: 80.0
-mkdir -p results/fasta_sequences/relaxed
-# Group1: MSSA (mecA negative strains)
-awk -F '\t' -v OFS='\t' 'NR>1 && $3=="0" {print}' results/relaxed/gene_detection.tsv \
-  | cut -f1 \
-> results/relaxed/MSSA_seqids.txt
-# Group 2: MRSA-mecI-positive (mecA and mecI positive strains)
-awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="1") {print}' results/relaxed/gene_detection.tsv \
-  | cut -f1 \
-> results/relaxed/MRSA-mecI-positive_seqids.txt
-# Group 3: MRSA (mecA positive but mecI negative strains)
-awk -F '\t' -v OFS='\t' 'NR>1 && ($3=="1" && $4=="0") {print}' results/relaxed/gene_detection.tsv \
-  | cut -f1 \
-> results/relaxed/MRSA-mecI-negative_seqids.txt
-# Extract gene alignment sequence of
-# each strain of interest
-echo '#!/usr/bin/env bash' > ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
-for strain in "MSSA" "MRSA-mecI-positive" "MRSA-mecI-negative"; do
-  echo "# ${strain} strains" >> ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
-  for gene in "BlaI" "BlaR1" "BlaZ" "MecA" "MecI" "Stk1" "Stp1"; do
-    echo "${PWD}/scripts/extract_blastn_alignment_sequence.py --split-strain-fasta-ids --input-blast-result ${PWD}/results/relaxed/${gene}_blastn_results.tsv --input-strain-ids ${PWD}/results/relaxed/${strain}_seqids.txt --input-strain-fasta ${PWD}/data/staphylococcus_aureus_genomic.fa --output-strain-fasta ${PWD}/results/fasta_sequences/relaxed/${strain}/${strain}_${gene}_aligned_sequence.fa" >> ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
-  done
-done && chmod +x ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
-swarm --time 6:00:00 --logdir "${PWD}/results/fasta_sequences/relaxed/" --module 'python/3.12' -t 2 -g 128 -b 5 -f ${PWD}/results/fasta_sequences/relaxed/extract_sequences.swarm
 ```
 
 ## Methods
